@@ -71,7 +71,7 @@ router.get('/', (req, res, next)=>{
 //add new product
 router.post('/', upload.single('productImage'),(req, res, next)=>{
     //New Instance of product to Save
-    console.log(req.file);
+    //console.log(req.file);
     const product = new Product({
             _id: new mongoose.Types.ObjectId(),
             name: req.body.name,

@@ -11,6 +11,7 @@ mongoose.connect('mongodb://127.0.0.1:27017/dbnoderestapi',{ useNewUrlParser: tr
 //Import required Products and Orders Routes
 const productsRoutes = require('./api/routes/products');
 const ordersRoutes = require('./api/routes/orders');
+const usersRoutes = require('./api/routes/users');
 
 
 //Initialize Logging middleware Morgan
@@ -34,6 +35,7 @@ app.use(bodyParser.json());
 //Define imported routes
 app.use('/products', productsRoutes);
 app.use('/orders', ordersRoutes);
+app.use('/users', usersRoutes);
 
 //Error Handling
 app.use((req,res,next)=>{
