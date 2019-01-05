@@ -1,0 +1,6 @@
+# Ignored Directories
+/node_modules
+
+#Ignored files
+nodemon.json
+
