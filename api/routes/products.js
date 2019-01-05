@@ -1,6 +1,35 @@
 const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
+const multer = require('multer');
+
+//Define Storage strategy for Multer
+const storage = multer.diskStorage({
+    destination: (req, file, cb)=>{
+        cb(null, './uploads');
+    },
+    filename: (req, file, cb) => {
+        cb(null,new Date().toISOString() + file.originalname);
+    }
+})
+
+//File Filter
+const fileFilter = (req, file, cb) => {
+    if (file.mimetype === 'image/jpeg' || file.mimetype === 'image/png') {
+        cb(null, true);
+    } else {
+        cb(new Error('File format not supported'), false);
+    }
+}
+
+const upload = multer({
+    storage : storage, 
+    limits:{
+        fileSize: 1024 * 1024 * 30
+    },
+    fileFilter: fileFilter
+});
+
 
 const Product = require('../models/product');
 
@@ -8,7 +37,7 @@ const Product = require('../models/product');
 router.get('/', (req, res, next)=>{
     //Get all products from MongoDB
     Product.find({})
-           .select('name price _id')
+           .select('name price _id productImage')
            .exec()
            .then(docs => {
                if (docs) {
@@ -20,6 +49,7 @@ router.get('/', (req, res, next)=>{
                                 return {
                                     name:doc.name,
                                     price:doc.price,
+                                    productImage:doc.productImage,
                                     id: doc._id,
                                     request:{
                                         type:"GET",
@@ -39,12 +69,14 @@ router.get('/', (req, res, next)=>{
 });
 
 //add new product
-router.post('/', (req, res, next)=>{
+router.post('/', upload.single('productImage'),(req, res, next)=>{
     //New Instance of product to Save
+    console.log(req.file);
     const product = new Product({
             _id: new mongoose.Types.ObjectId(),
             name: req.body.name,
-            price: req.body.price
+            price: req.body.price,
+            productImage: req.file.path
         });
     product.save()
            .then(result => {
@@ -56,6 +88,7 @@ router.post('/', (req, res, next)=>{
                         createdProduct: {
                             name:result.name,
                             price:result.price,
+                            productImage:doc.productImage,
                             id: result._id,
                             request:{
                                 type:"GET",
@@ -76,12 +109,15 @@ router.get('/:id', (req, res,next)=>{
     const id = req.params.id;
     //Get Product from DB by ID
     Product.findById(id)
+           .select('name price _id productImage')
+           .exec()
            .then(doc =>{
                console.log(doc);
                if (doc) {
                     res.status(200).json({product: {
                         name:doc.name,
                         price:doc.price,
+                        productImage:doc.productImage,
                         id: doc._id,
                         request:{
                             description: "Get all products",
@@ -116,6 +152,7 @@ router.patch('/:id', (req, res,next)=>{
                        updatedProduct: {
                             name:result.name,
                             price:result.price,
+                            productImage:doc.productImage,
                             id: result._id,
                             request:{
                                 type:"GET",

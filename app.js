@@ -15,6 +15,8 @@ const ordersRoutes = require('./api/routes/orders');
 
 //Initialize Logging middleware Morgan
 app.use(morgan('dev'));
+//Define middleware to handle static files
+app.use('/uploads', express.static('uploads'))
 //Handle and parse HTTP Requests
 app.use(bodyParser.urlencoded({extended:false}));
 app.use(bodyParser.json());
