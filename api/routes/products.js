@@ -32,6 +32,7 @@ const upload = multer({
 
 
 const Product = require('../models/product');
+const VerifyAuth = require('../middleware/verify-auth');
 
 //Get all products
 router.get('/', (req, res, next)=>{
@@ -69,7 +70,7 @@ router.get('/', (req, res, next)=>{
 });
 
 //add new product
-router.post('/', upload.single('productImage'),(req, res, next)=>{
+router.post('/', VerifyAuth, upload.single('productImage'), (req, res, next)=>{
     //New Instance of product to Save
     //console.log(req.file);
     const product = new Product({
@@ -88,7 +89,7 @@ router.post('/', upload.single('productImage'),(req, res, next)=>{
                         createdProduct: {
                             name:result.name,
                             price:result.price,
-                            productImage:doc.productImage,
+                            productImage:result.productImage,
                             id: result._id,
                             request:{
                                 type:"GET",
@@ -136,7 +137,7 @@ router.get('/:id', (req, res,next)=>{
 });
 
 //Update specific product details
-router.patch('/:id', (req, res,next)=>{
+router.patch('/:id', VerifyAuth, (req, res,next)=>{
     const id = req.params.id;
     const updateOpsVals = {};
     for(const ops of req.body){
@@ -152,7 +153,7 @@ router.patch('/:id', (req, res,next)=>{
                        updatedProduct: {
                             name:result.name,
                             price:result.price,
-                            productImage:doc.productImage,
+                            productImage:result.productImage,
                             id: result._id,
                             request:{
                                 type:"GET",
@@ -170,7 +171,7 @@ router.patch('/:id', (req, res,next)=>{
 });
 
 //Delete specific product
-router.delete('/:id', (req, res,next)=>{
+router.delete('/:id',VerifyAuth, (req, res,next)=>{
     const id = req.params.id;
     //Delete Product
     Product.deleteOne({_id: id})

@@ -4,11 +4,12 @@ const mongoose = require('mongoose');
 
 const Order = require('../models/order');
 const Product = require('../models/product');
+const VerifyAuth = require('../middleware/verify-auth');
 
 
 //Get all orders
-router.get('/', (req, res, next)=>{
-    Order.find()
+router.get('/',VerifyAuth, (req, res, next)=>{
+    Order.find({})
          .select('_id product quantity')
          .populate('product','_id name')
          .exec()
@@ -41,7 +42,7 @@ router.get('/', (req, res, next)=>{
 });
 
 //add new order
-router.post('/', (req, res, next)=>{
+router.post('/',VerifyAuth, (req, res, next)=>{
 
     //Check if Product exists before storing order associated with product
     Product.findById(req.body.productId)
@@ -81,14 +82,18 @@ router.post('/', (req, res, next)=>{
 });
 
 //Get specific order details
-router.get('/:id', (req, res,next)=>{
+router.get('/:id',VerifyAuth, (req, res,next)=>{
     const id = req.params.id;
     Order.findById(id)
          .populate('product')
          .then(order => {
             console.log(order);
-            if (order) {
-                 res.status(200).json({order: {
+            if (order.length <= 1) {
+                res.status(404);
+                res.json({
+                    Message: "No valid order found for ID: " + id});
+            } else {
+                res.status(200).json({order: {
                     id:order._id,
                     product:order.product,
                     quantity: order.quantity,
@@ -97,9 +102,7 @@ router.get('/:id', (req, res,next)=>{
                          type:"GET",
                          url:"http://localhost:3000/orders/"
                     }
-                 }});   
-            }else{
-             res.status(404).json({Message: `No valid order found for ID: ${id}`});
+                 }}); 
             }
          })
          .catch(err => {
@@ -107,14 +110,8 @@ router.get('/:id', (req, res,next)=>{
          });
 });
 
-//Update specific order details
-// router.patch('/:id', (req, res,next)=>{
-//     const id = req.params.id;
-//     res.status(200).json({message:`You updated order of ID`, id:id});
-// });
-
 //Delete specific order
-router.delete('/:id', (req, res,next)=>{
+router.delete('/:id',VerifyAuth, (req, res,next)=>{
     Order.deleteOne({_id: req.params.id})
          .exec()
          .then(order => {

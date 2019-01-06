@@ -72,7 +72,6 @@ router.post("/login",(req,res,next)=>{
                     }
                     if(result){
                         //JWT Token Generation
-                        console.log(process.env.JWT_KEY)
                         const token = jwt.sign({email: user[0].email,userId: user[0]._id},process.env.JWT_KEY,{expiresIn:"1h"});
 
                         res.status(200).json({
