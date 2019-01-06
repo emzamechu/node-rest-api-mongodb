@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const mongoose = require('mongoose');
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
 const saltRounds = 10;
 
 const User = require('../models/user');
@@ -13,11 +14,12 @@ router.post("/signup", (req,res,next)=>{
     User.find({email: req.body.email})
         .exec()
         .then(doc => {
-            if(doc){
+            if(doc.length>=1){
+                console.log(doc);
                 res.status(409).json({Message: "User already exists!"});
             }else{
                 //Save new User to Database
-                bcrypt.hash(req.body.password, 10, (err, hash)=>{
+                bcrypt.hash(req.body.password, saltRounds, (err, hash)=>{
                     if(err){
                         res.status(500).json({
                             error:err
@@ -57,9 +59,50 @@ router.post("/signup", (req,res,next)=>{
         });
 });
 
+router.post("/login",(req,res,next)=>{
+    User.find({email:req.body.email})
+        .exec()
+        .then(user => {
+            if(user.length >=1){
+                bcrypt.compare(req.body.password, user[0].password, (err, result)=>{
+                    if(err){
+                        res.status(401).json({
+                            Message:"Login failed!"
+                        });
+                    }
+                    if(result){
+                        //JWT Token Generation
+                        console.log(process.env.JWT_KEY)
+                        const token = jwt.sign({email: user[0].email,userId: user[0]._id},process.env.JWT_KEY,{expiresIn:"1h"});
+
+                        res.status(200).json({
+                            Message: "Auth Successful",
+                            token: token
+                        });
+                    }else{
+                        res.status(401).json({
+                            Message:"Login failed!"
+                        });
+                    }
+                });
+            }else{
+                res.status(401).json({
+                    Message:"Login failed!"
+                });
+            }
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(501).json({
+                error:"DB Error occurred", 
+                error: err
+            });
+        })
+});
+
 router.get("/:id", (req,res,next)=>{
     const id = req.params.id;
-    //Get Product from DB by ID
+    //Get Product from DB by ID returns JSON object
     User.findById(id)
            .select('email password')
            .exec()
@@ -69,12 +112,7 @@ router.get("/:id", (req,res,next)=>{
                     res.status(200).json({user: {
                         email:doc.email,
                         password:doc.password,
-                        id: doc._id,
-                        request:{
-                            description: "Get all users",
-                            type:"GET",
-                            url:"http://localhost:3000/users/"
-                        }
+                        id: doc._id
                     }});   
                }else{
                 res.status(404).json({Message: `User not found: ${id}`});
